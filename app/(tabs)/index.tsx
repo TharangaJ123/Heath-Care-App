@@ -2,7 +2,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 export default function TabOneScreen() {
   const router = useRouter();
@@ -11,26 +11,9 @@ export default function TabOneScreen() {
     router.setParams({ screen: 'profile' });
   };
 
-  const navigateToSettings = () => {
-    router.setParams({ screen: 'settings' });
-  };
-
   return (
     <ThemedView style={styles.container}>
       <ThemedText type="title">Home Tab</ThemedText>
-      <ThemedText style={styles.subtitle}>
-        This is the first tab screen
-      </ThemedText>
-      
-      <ThemedView style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button} onPress={navigateToProfile}>
-          <ThemedText style={styles.buttonText}>Go to Profile Tab</ThemedText>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.button} onPress={navigateToSettings}>
-          <ThemedText style={styles.buttonText}>Go to Settings Tab</ThemedText>
-        </TouchableOpacity>
-      </ThemedView>
     </ThemedView>
   );
 }
