@@ -12,6 +12,7 @@ import {
 import React from 'react';
 import {
   Alert,
+  Image,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -20,9 +21,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useProfile } from '@/contexts/ProfileContext';
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { profileImage, userInfo } = useProfile();
 
   const handleLogout = () => {
     Alert.alert(
@@ -88,11 +91,15 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <View style={styles.userCard}>
             <View style={styles.userAvatar}>
-              <User size={32} color="#1E3A8A" />
+              {profileImage ? (
+                <Image source={{ uri: profileImage }} style={styles.profileImage} />
+              ) : (
+                <User size={32} color="#1E3A8A" />
+              )}
             </View>
             <View style={styles.userInfo}>
-              <Text style={styles.userName}>John Doe</Text>
-              <Text style={styles.userEmail}>john.doe@example.com</Text>
+              <Text style={styles.userName}>{userInfo.firstName} {userInfo.lastName}</Text>
+              <Text style={styles.userEmail}>{userInfo.email}</Text>
             </View>
             <TouchableOpacity style={styles.editButton}>
               <Edit size={16} color="#1E3A8A" />
@@ -108,7 +115,7 @@ export default function ProfileScreen() {
               title="Personal Information"
               subtitle="Update your personal details"
               icon={<User size={20} color="#1E3A8A" />}
-              onPress={() => Alert.alert('Info', 'Personal Information screen')}
+              onPress={() => router.push('/(tabs)/personal-details' as any)}
             />
             
             <ProfileItem
@@ -224,6 +231,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
+    overflow: 'hidden',
+  },
+  profileImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
   },
   userInfo: {
     flex: 1,
