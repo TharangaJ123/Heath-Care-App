@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Home, Plus, User } from 'lucide-react-native';
+import { Home, Plus, User, Activity } from 'lucide-react-native';
 import React from 'react';
 import { Platform } from 'react-native';
 
@@ -33,8 +33,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="add-medicine"
         options={{
-          title: 'Add Medicine',
-          tabBarIcon: ({ color }) => <Plus size={24} color={color} />,
+          href: null, // This hides it from the tab bar
         }}
       />
       <Tabs.Screen
@@ -70,6 +69,19 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="personal-details"
+        options={{
+          href: null, // This hides it from the tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="medication-tracker"
+        options={{
+          title: 'Tracker',
+          tabBarIcon: ({ color }) => <Activity size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="adherence-reports"
         options={{
           href: null, // This hides it from the tab bar
         }}

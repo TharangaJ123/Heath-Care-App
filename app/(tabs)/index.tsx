@@ -6,6 +6,7 @@ import {
   Edit,
   MinusCircle,
   Pill,
+  Plus,
   Settings,
   Trash2,
   User,
@@ -17,6 +18,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Dimensions,
+  Modal,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -76,6 +78,8 @@ export default function HomeScreen() {
   const [medications, setMedications] = useState<MedicationSchedule[]>([]);
   const [allMedications, setAllMedications] = useState<Medication[]>([]);
   const [markedDates, setMarkedDates] = useState<Record<string, any>>({});
+  const [selectedMedication, setSelectedMedication] = useState<MedicationSchedule | null>(null);
+  const [showStatusModal, setShowStatusModal] = useState(false);
 
   useEffect(() => {
     // Request notification permissions and setup listeners
@@ -263,6 +267,11 @@ export default function HomeScreen() {
     }
   };
 
+  const handleMedicationPress = (medication: MedicationSchedule) => {
+    setSelectedMedication(medication);
+    setShowStatusModal(true);
+  };
+
   const handleLongPressMedication = (medication: MedicationSchedule) => {
     const medicationName = getMedicationName(medication.medicationId);
     Alert.alert(
@@ -288,6 +297,85 @@ export default function HomeScreen() {
           },
         },
       ]
+    );
+  };
+
+  const handleStatusChange = async (status: 'taken' | 'missed' | 'skipped' | 'pending') => {
+    if (!selectedMedication) return;
+    
+    try {
+      await updateMedicationStatus(selectedMedication.id, status);
+      setShowStatusModal(false);
+      setSelectedMedication(null);
+      Alert.alert('Success', `Medication status updated to ${status}!`);
+    } catch (error) {
+      console.error('Error updating medication status:', error);
+      Alert.alert('Error', 'Failed to update medication status');
+    }
+  };
+
+  const StatusModal = () => {
+    if (!selectedMedication) return null;
+    
+    const medicationName = getMedicationName(selectedMedication.medicationId);
+    
+    return (
+      <Modal
+        visible={showStatusModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowStatusModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Update Status</Text>
+            <Text style={styles.modalSubtitle}>
+              {medicationName} - {selectedMedication.time}
+            </Text>
+            
+            <View style={styles.statusOptions}>
+              <TouchableOpacity
+                style={[styles.statusOption, styles.takenOption]}
+                onPress={() => handleStatusChange('taken')}
+              >
+                <CheckCircle size={24} color="#10B981" />
+                <Text style={[styles.statusOptionText, { color: '#10B981' }]}>Taken</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.statusOption, styles.missedOption]}
+                onPress={() => handleStatusChange('missed')}
+              >
+                <XCircle size={24} color="#EF4444" />
+                <Text style={[styles.statusOptionText, { color: '#EF4444' }]}>Missed</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.statusOption, styles.skippedOption]}
+                onPress={() => handleStatusChange('skipped')}
+              >
+                <MinusCircle size={24} color="#F59E0B" />
+                <Text style={[styles.statusOptionText, { color: '#F59E0B' }]}>Skipped</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.statusOption, styles.pendingOption]}
+                onPress={() => handleStatusChange('pending')}
+              >
+                <MinusCircle size={24} color="#6B7280" />
+                <Text style={[styles.statusOptionText, { color: '#6B7280' }]}>Pending</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => setShowStatusModal(false)}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     );
   };
 
@@ -344,14 +432,26 @@ export default function HomeScreen() {
         {/* Medication List Section */}
         <View style={styles.medicationSection}>
            <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
-            Medications for {new Date(selectedDate).toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
-          </Text>
-             <Text style={styles.sectionHint}>💡 Long press to delete</Text>
+            <View style={styles.sectionTitleRow}>
+              <Text style={styles.sectionTitle}>
+                Medications for {new Date(selectedDate).toLocaleDateString('en-US', { 
+                  weekday: 'long', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </Text>
+
+            </View>
+            <View style={styles.hintAndButtonRow}>
+              <Text style={styles.sectionHint}>💡 Long press to delete</Text>
+              <TouchableOpacity 
+                style={styles.addMedicineButton}
+                onPress={() => router.push('/(tabs)/add-medicine')}
+              >
+                <Plus size={16} color="#FFFFFF" />
+                <Text style={styles.addMedicineButtonText}>Add Medicine</Text>
+              </TouchableOpacity>
+            </View>
            </View>
           
           {medications.length === 0 ? (
@@ -367,6 +467,7 @@ export default function HomeScreen() {
                    styles.medicationCard,
                    pressed && styles.medicationCardPressed
                  ]}
+                 onPress={() => handleMedicationPress(medication)}
                  onLongPress={() => handleLongPressMedication(medication)}
                  delayLongPress={500} // 500ms delay for long press
                >
@@ -464,6 +565,8 @@ export default function HomeScreen() {
            </ScrollView>
         </View>
       </ScrollView>
+      
+      <StatusModal />
     </SafeAreaView>
   );
 }
@@ -538,6 +641,32 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     marginBottom: 16,
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  addMedicineButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1E3A8A',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 6,
+  },
+  addMedicineButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  hintAndButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
   },
   sectionHint: {
     fontSize: 12,
@@ -688,5 +817,76 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#374151',
     textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    width: width * 0.85,
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1F2937',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  statusOptions: {
+    gap: 12,
+    marginBottom: 24,
+  },
+  statusOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  takenOption: {
+    borderColor: '#10B981',
+    backgroundColor: '#F0FDF4',
+  },
+  missedOption: {
+    borderColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
+  },
+  skippedOption: {
+    borderColor: '#F59E0B',
+    backgroundColor: '#FFFBEB',
+  },
+  pendingOption: {
+    borderColor: '#6B7280',
+    backgroundColor: '#F9FAFB',
+  },
+  statusOptionText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 12,
+  },
+  cancelButton: {
+    backgroundColor: '#F3F4F6',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6B7280',
   },
 });

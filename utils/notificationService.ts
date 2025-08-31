@@ -7,6 +7,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -47,8 +49,9 @@ export class NotificationService {
           priority: Notifications.AndroidNotificationPriority.HIGH,
         },
         trigger: {
+          type: 'date',
           date: scheduleDate,
-        },
+        } as Notifications.DateTriggerInput,
       });
 
       return notificationId;
@@ -128,8 +131,9 @@ export class NotificationService {
           sound: 'default',
         },
         trigger: {
+          type: 'timeInterval',
           seconds: 5, // Show after 5 seconds
-        },
+        } as Notifications.TimeIntervalTriggerInput,
       });
     } catch (error) {
       console.error('Error showing test notification:', error);
@@ -139,11 +143,11 @@ export class NotificationService {
 
 // Set up notification listeners
 export const setupNotificationListeners = () => {
-  const notificationListener = Notifications.addNotificationReceivedListener(notification => {
+  const notificationListener = Notifications.addNotificationReceivedListener((notification: Notifications.Notification) => {
     console.log('Notification received:', notification);
   });
 
-  const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
+  const responseListener = Notifications.addNotificationResponseReceivedListener((response: Notifications.NotificationResponse) => {
     console.log('Notification response:', response);
     // Handle notification tap here if needed
   });

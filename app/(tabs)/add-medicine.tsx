@@ -24,11 +24,13 @@ import {
     View,
 } from 'react-native';
 import { generateMedicationSchedule, Medication, saveMedication } from '../../utils/storage';
+import { useMedication } from '@/contexts/MedicationContext';
 
 const { width } = Dimensions.get('window');
 
 export default function AddMedicineScreen() {
   const router = useRouter();
+  const { addMedication, loadTodaysSchedule } = useMedication();
   
   const [medicineName, setMedicineName] = useState('');
   const [dosage, setDosage] = useState('');
@@ -73,8 +75,25 @@ export default function AddMedicineScreen() {
     }
 
     try {
-      // Create medicine data
-      const medicineData: Medication = {
+      // Create medicine data for context
+      const medicineData = {
+        name: medicineName.trim(),
+        dosage: dosage.trim(),
+        frequency,
+        times,
+        startDate,
+        endDate,
+        color: '#3B82F6', // Default color
+      };
+
+      // Add to medication context
+      addMedication(medicineData);
+      
+      // Load today's schedule to reflect the new medication
+      await loadTodaysSchedule();
+
+      // Also save to storage for backward compatibility
+      const storageMedicineData: Medication = {
         id: Date.now(),
         name: medicineName.trim(),
         dosage: dosage.trim(),
@@ -86,18 +105,15 @@ export default function AddMedicineScreen() {
         createdAt: new Date().toISOString(),
       };
 
-      // Save medicine to storage
-      await saveMedication(medicineData);
-      
-      // Generate schedule for the medication
-      await generateMedicationSchedule(medicineData);
+      await saveMedication(storageMedicineData);
+      await generateMedicationSchedule(storageMedicineData);
 
       console.log('Medicine saved successfully:', medicineData);
       
       // Show success message and navigate back
       Alert.alert(
         'Success!',
-        'Medicine has been added to your schedule.',
+        'Medicine has been added to your schedule and tracker.',
         [
           {
             text: 'OK',
